@@ -38,14 +38,14 @@ export function SettingsView() {
   const exportBackup = () => {
     downloadText(
       JSON.stringify(createBackup(snapshot), null, 2),
-      `bitacora-${toLocalDate()}.json`,
+      `koyomi-${toLocalDate()}.json`,
       'application/json',
     )
     setMessage({ tone: 'ok', text: 'Copia descargada.' })
   }
 
   const exportMarkdown = () => {
-    downloadText(createMarkdownReport(snapshot), `bitacora-${toLocalDate()}.md`, 'text/markdown')
+    downloadText(createMarkdownReport(snapshot), `koyomi-${toLocalDate()}.md`, 'text/markdown')
     setMessage({ tone: 'ok', text: 'Resumen en Markdown descargado.' })
   }
 
@@ -173,7 +173,7 @@ export function SettingsView() {
       </section>
 
       <section className="settings-block about">
-        <h3>Sobre Bitácora</h3>
+        <h3>Sobre Koyomi</h3>
         <p className="hint">
           Bullet journal digital con cuatro escalas: día, mes, trimestre y año. Símbolos clásicos:
           <span className="legend"><b>•</b> tarea · <b>○</b> evento · <b>—</b> nota · <b>×</b> hecha · <b>›</b> migrada · <b>~</b> descartada</span>

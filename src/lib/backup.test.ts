@@ -101,7 +101,7 @@ describe('parseBackup', () => {
 describe('createMarkdownReport', () => {
   it('escribe una sección por escala y las colecciones', () => {
     const report = createMarkdownReport(snapshot)
-    expect(report).toContain('# Bitácora')
+    expect(report).toContain('# Koyomi')
     expect(report).toContain('## Colecciones')
     expect(report).toContain('Idea para el blog')
   })

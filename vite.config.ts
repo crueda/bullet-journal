@@ -14,8 +14,8 @@ export default defineConfig({
       registerType: 'prompt',
       includeAssets: ['icon.svg'],
       manifest: {
-        name: 'Bitácora — Bullet journal',
-        short_name: 'Bitácora',
+        name: 'Koyomi — Bullet journal',
+        short_name: 'Koyomi',
         description: 'Tu bullet journal personal: tareas por día, mes, trimestre y año.',
         theme_color: '#24304d',
         background_color: '#f7f4ed',

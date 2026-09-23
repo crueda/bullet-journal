@@ -140,7 +140,7 @@ export function createBackup(snapshot: AppSnapshot): BackupData {
 
 export function parseBackup(value: unknown): BackupData {
   if (!isObject(value) || value.format !== BACKUP_FORMAT || value.version !== BACKUP_VERSION) {
-    throw new Error('No es una copia de Bitácora compatible.')
+    throw new Error('No es una copia de Koyomi compatible.')
   }
   if (
     !isTimestamp(value.exportedAt)
@@ -192,7 +192,7 @@ export function createMarkdownReport(snapshot: AppSnapshot): string {
     currentKey('quarter'),
     currentKey('year'),
   ]
-  const lines = ['# Bitácora', '', `Exportado el ${new Date().toLocaleDateString('es-ES')}.`, '']
+  const lines = ['# Koyomi', '', `Exportado el ${new Date().toLocaleDateString('es-ES')}.`, '']
 
   for (const key of keys) {
     const entries = entriesFor(snapshot.entries, key)

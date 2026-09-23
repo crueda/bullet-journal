@@ -1,4 +1,6 @@
-# Bitácora — Bullet journal
+# Koyomi — Bullet journal
+
+*Koyomi* (暦) es la palabra japonesa para el almanaque: el cómputo del tiempo en días, meses y años.
 
 PWA móvil para gestión personal de tareas siguiendo la metodología *bullet journal*. Guarda primero en
 IndexedDB, funciona sin conexión y sincroniza en segundo plano con una identidad anónima de Firebase.
