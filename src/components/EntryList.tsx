@@ -36,15 +36,26 @@ export function EntryRow({ entry, tags, onToggle, onOpen, onMove, showPeriod, dr
   return (
     <div className={`entry-row status-${entry.status} kind-${entry.kind}`}>
       {dragHandle}
-      <button
-        className="entry-bullet"
-        type="button"
-        onClick={() => onToggle(entry.id)}
-        aria-label={entry.status === 'done' ? 'Marcar como pendiente' : 'Marcar como completada'}
-        title={STATUS_LABELS[entry.status]}
-      >
-        <span aria-hidden="true">{bulletSymbol(entry)}</span>
-      </button>
+      {entry.kind === 'task' ? (
+        <input
+          className="entry-checkbox"
+          type="checkbox"
+          checked={entry.status === 'done'}
+          onChange={() => onToggle(entry.id)}
+          aria-label={entry.status === 'done' ? 'Marcar como pendiente' : 'Marcar como completada'}
+          title={entry.status === 'done' ? 'Hecha; pulsar para reabrir' : 'Marcar como hecha'}
+        />
+      ) : (
+        <button
+          className="entry-bullet"
+          type="button"
+          onClick={() => onToggle(entry.id)}
+          aria-label={entry.status === 'done' ? 'Marcar como pendiente' : 'Marcar como completada'}
+          title={STATUS_LABELS[entry.status]}
+        >
+          <span aria-hidden="true">{bulletSymbol(entry)}</span>
+        </button>
+      )}
       <button className="entry-main" type="button" onClick={() => onOpen(entry)}>
         <span className="entry-title">
           {entry.priority && <Star className="mark priority" size={14} aria-label="Prioritaria" />}

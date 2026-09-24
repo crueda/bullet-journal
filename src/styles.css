@@ -562,9 +562,13 @@ code {
 
 .entry-row.status-done,
 .entry-row.status-cancelled {
-  background: transparent;
+  background: color-mix(in srgb, var(--bg-soft) 58%, transparent);
   box-shadow: none;
   border-color: transparent;
+}
+
+.entry-row.status-done {
+  border-color: color-mix(in srgb, var(--ok) 18%, transparent);
 }
 
 .drag-handle {
@@ -586,6 +590,15 @@ code {
   color: var(--accent);
   font-size: 1.1rem;
   line-height: 1;
+}
+
+.entry-checkbox {
+  width: 22px;
+  height: 22px;
+  margin: 0 6px;
+  flex: none;
+  accent-color: var(--ok);
+  cursor: pointer;
 }
 
 .entry-bullet.static {
@@ -621,6 +634,16 @@ code {
   color: var(--muted);
   text-decoration: line-through;
   text-decoration-color: color-mix(in srgb, var(--muted) 55%, transparent);
+}
+
+.status-done .entry-main,
+.status-done .entry-move,
+.status-done .drag-handle {
+  opacity: 0.58;
+}
+
+.status-done .entry-checkbox {
+  opacity: 1;
 }
 
 .kind-note .entry-title {

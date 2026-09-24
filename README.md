@@ -119,7 +119,8 @@ Las reglas ya publicadas (`users/{userId}/{document=**}` sólo para su propio `u
 colecciones sin cambios. Se incluye [firestore.rules](./firestore.rules) por si hay que republicarlas:
 
 ```bash
-npx firebase deploy --only firestore:rules
+npx --yes firebase-tools login
+npx --yes firebase-tools deploy --only firestore:rules
 ```
 
 Requisitos ya configurados en el proyecto: acceso **Anónimo** habilitado, creación de cuentas activada y
