@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { AlarmClock, ChevronLeft, ChevronRight, Undo2 } from 'lucide-react'
+import { AlarmClock, CalendarDays, ChevronLeft, ChevronRight, ListChecks, Undo2 } from 'lucide-react'
 import type { JournalEntry, LocalDate, PeriodKey } from '../types'
 import {
   countEntries,
@@ -33,6 +33,7 @@ import { MoveSheet } from './MoveSheet'
 import { MigrationSheet } from './MigrationSheet'
 
 const WEEKDAYS = ['L', 'M', 'X', 'J', 'V', 'S', 'D']
+type MonthView = 'tasks' | 'calendar'
 
 interface PeriodViewProps {
   periodKey: PeriodKey
@@ -53,6 +54,7 @@ export function PeriodView({ periodKey, title, label, onNavigate, onJumpTo }: Pe
   const [moving, setMoving] = useState<JournalEntry>()
   const [reviewing, setReviewing] = useState(false)
   const [showClosed, setShowClosed] = useState(preferences.showCompleted)
+  const [monthView, setMonthView] = useState<MonthView>('tasks')
 
   const visible = useMemo(() => entriesFor(entries, periodKey), [entries, periodKey])
   const open = visible.filter(isOpen)
@@ -159,14 +161,42 @@ export function PeriodView({ periodKey, title, label, onNavigate, onJumpTo }: Pe
           </button>
         )}
 
-        <QuickAdd
-          periodKey={periodKey}
-          placeholder={`Añadir a ${periodShortLabel(periodKey, today).toLowerCase()}…`}
-          onOpenEditor={() => setEditing({ open: true })}
-        />
+        {scope === 'month' && (
+          <div className="segmented month-view-toggle" role="tablist" aria-label="Vista del mes">
+            <button
+              id="month-tasks-tab"
+              className={monthView === 'tasks' ? 'active' : ''}
+              type="button"
+              role="tab"
+              aria-selected={monthView === 'tasks'}
+              aria-controls="month-tasks-panel"
+              onClick={() => setMonthView('tasks')}
+            >
+              <ListChecks size={16} />
+              Tareas
+            </button>
+            <button
+              id="month-calendar-tab"
+              className={monthView === 'calendar' ? 'active' : ''}
+              type="button"
+              role="tab"
+              aria-selected={monthView === 'calendar'}
+              aria-controls="month-calendar-panel"
+              onClick={() => setMonthView('calendar')}
+            >
+              <CalendarDays size={16} />
+              Calendario
+            </button>
+          </div>
+        )}
 
-        {calendar && (
-          <div className="month-calendar" role="group" aria-label="Días del mes">
+        {calendar && monthView === 'calendar' && (
+          <div
+            id="month-calendar-panel"
+            className="month-calendar"
+            role="tabpanel"
+            aria-labelledby="month-calendar-tab"
+          >
             {WEEKDAYS.map((letter) => <span key={letter} className="calendar-head">{letter}</span>)}
             {monthGrid(periodKey).map((day, index) => {
               if (!day) return <span key={`empty-${index}`} className="calendar-cell empty" />
@@ -187,46 +217,61 @@ export function PeriodView({ periodKey, title, label, onNavigate, onJumpTo }: Pe
           </div>
         )}
 
-        {open.length > 0 ? (
-          <EntryList
-            entries={open}
-            tags={tagIndex}
-            sortable
-            onToggle={(id) => void toggleEntryDone(id)}
-            onOpen={(entry) => setEditing({ open: true, entry })}
-            onMove={setMoving}
-            onReorder={(ids) => void reorderEntries(periodKey, [...ids, ...closed.map((entry) => entry.id)])}
-          />
-        ) : (
-          <p className="empty-state">
-            {counts.total
-              ? 'Todo cerrado por aquí. Buen trabajo.'
-              : 'Sin entradas todavía. Escribe arriba para empezar.'}
-          </p>
-        )}
+        {(scope !== 'month' || monthView === 'tasks') && (
+          <div
+            id={scope === 'month' ? 'month-tasks-panel' : undefined}
+            className="period-entry-panel"
+            role={scope === 'month' ? 'tabpanel' : undefined}
+            aria-labelledby={scope === 'month' ? 'month-tasks-tab' : undefined}
+          >
+            <QuickAdd
+              periodKey={periodKey}
+              placeholder={`Añadir a ${periodShortLabel(periodKey, today).toLowerCase()}…`}
+              onOpenEditor={() => setEditing({ open: true })}
+            />
 
-        {closed.length > 0 && (
-          <section className="closed-section">
-            <button className="section-toggle" type="button" onClick={() => setShowClosed(!showClosed)}>
-              {showClosed ? 'Ocultar' : 'Ver'} {closed.length} {closed.length === 1 ? 'cerrada' : 'cerradas'}
-            </button>
-            {showClosed && (
+            {open.length > 0 ? (
               <EntryList
-                entries={closed}
+                entries={open}
                 tags={tagIndex}
+                sortable
                 onToggle={(id) => void toggleEntryDone(id)}
                 onOpen={(entry) => setEditing({ open: true, entry })}
                 onMove={setMoving}
+                onReorder={(ids) => void reorderEntries(periodKey, [...ids, ...closed.map((entry) => entry.id)])}
               />
+            ) : (
+              <p className="empty-state">
+                {counts.total
+                  ? 'Todo cerrado por aquí. Buen trabajo.'
+                  : 'Sin entradas todavía. Escribe arriba para empezar.'}
+              </p>
             )}
-          </section>
-        )}
 
-        {lastMoved && (
-          <button className="undo-button" type="button" onClick={() => void undoMove(lastMoved.id)}>
-            <Undo2 size={15} />
-            Deshacer el movimiento de «{lastMoved.title}»
-          </button>
+            {closed.length > 0 && (
+              <section className="closed-section">
+                <button className="section-toggle" type="button" onClick={() => setShowClosed(!showClosed)}>
+                  {showClosed ? 'Ocultar' : 'Ver'} {closed.length} {closed.length === 1 ? 'cerrada' : 'cerradas'}
+                </button>
+                {showClosed && (
+                  <EntryList
+                    entries={closed}
+                    tags={tagIndex}
+                    onToggle={(id) => void toggleEntryDone(id)}
+                    onOpen={(entry) => setEditing({ open: true, entry })}
+                    onMove={setMoving}
+                  />
+                )}
+              </section>
+            )}
+
+            {lastMoved && (
+              <button className="undo-button" type="button" onClick={() => void undoMove(lastMoved.id)}>
+                <Undo2 size={15} />
+                Deshacer el movimiento de «{lastMoved.title}»
+              </button>
+            )}
+          </div>
         )}
 
         {parent && parentCounts && parentCounts.total > 0 && (

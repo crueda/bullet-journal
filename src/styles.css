@@ -427,6 +427,11 @@ code {
   padding-top: 14px;
 }
 
+.period-entry-panel {
+  display: grid;
+  gap: 14px;
+}
+
 .review-banner {
   display: flex;
   align-items: center;
@@ -471,6 +476,10 @@ code {
 }
 
 /* ---------- Calendario del mes ---------- */
+
+.month-view-toggle {
+  width: 100%;
+}
 
 .month-calendar {
   display: grid;
