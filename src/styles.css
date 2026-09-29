@@ -16,6 +16,7 @@
   --accent-ink: #ffffff;
   --highlight: #c2503f;
   --highlight-soft: #f6e3de;
+  --highlight-ink: #ffffff;
   --danger: #b03a3a;
   --ok: #3f8f6a;
   --shadow: 0 14px 34px rgba(29, 36, 51, 0.09);
@@ -38,6 +39,7 @@
   --accent-ink: #131722;
   --highlight: #e0796a;
   --highlight-soft: #3a2a27;
+  --highlight-ink: #131722;
   --danger: #ef8178;
   --ok: #6fc49a;
   --shadow: 0 14px 34px rgba(0, 0, 0, 0.3);
@@ -360,6 +362,10 @@ code {
   color: var(--ink);
 }
 
+.week-day.has-open-tasks .week-number {
+  font-weight: 700;
+}
+
 .week-day.active {
   background: var(--accent);
   color: var(--accent-ink);
@@ -378,19 +384,36 @@ code {
   font-weight: 600;
 }
 
-.week-dot {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: transparent;
+/*
+ * Marcador de estado de un día, compartido por la tira semanal y el
+ * calendario: pastilla con el número de tareas pendientes si queda algo
+ * abierto, punto discreto si ya está todo cerrado. Ocupa siempre el mismo
+ * alto para que los números no se descoloquen entre celdas.
+ */
+.day-mark {
+  display: grid;
+  place-items: center;
+  min-width: 15px;
+  height: 14px;
+  border-radius: 999px;
+  font-size: 0.6rem;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
 }
 
-.week-dot.has-open {
+.day-mark.pending {
+  padding: 0 4px;
   background: var(--highlight);
+  color: var(--highlight-ink);
 }
 
-.week-dot.done {
-  background: var(--ok);
+.day-mark.done::after {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--ok) 80%, transparent);
 }
 
 /* ---------- Progreso ---------- */
@@ -510,7 +533,10 @@ code {
   position: relative;
   aspect-ratio: 1;
   display: grid;
+  grid-template-rows: 1fr auto;
   place-items: center;
+  gap: 1px;
+  padding: 2px 2px 3px;
   border: 1px solid transparent;
   border-radius: 9px;
   background: transparent;
@@ -518,14 +544,19 @@ code {
   font-size: 0.78rem;
 }
 
+.calendar-number {
+  line-height: 1;
+}
+
 .calendar-cell.empty {
   visibility: hidden;
 }
 
 .calendar-cell.has-open-tasks {
-  background: var(--highlight-soft);
+  background: color-mix(in srgb, var(--highlight) 14%, var(--surface));
+  border-color: color-mix(in srgb, var(--highlight) 38%, transparent);
   color: var(--ink);
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .calendar-cell.done {
@@ -537,16 +568,6 @@ code {
   border-color: var(--accent);
   font-weight: 700;
   color: var(--ink);
-}
-
-.calendar-dot {
-  position: absolute;
-  bottom: 3px;
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: currentColor;
-  opacity: 0.55;
 }
 
 /* ---------- Lista de entradas ---------- */

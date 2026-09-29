@@ -35,6 +35,18 @@ import { MigrationSheet } from './MigrationSheet'
 const WEEKDAYS = ['L', 'M', 'X', 'J', 'V', 'S', 'D']
 type MonthView = 'tasks' | 'calendar'
 
+/** Lo que se pinta en el marcador del día: las tareas que siguen abiertas. */
+function markCount(pending: number): string {
+  return pending > 9 ? '9+' : String(pending)
+}
+
+/** Equivalente en texto del marcador, para lectores de pantalla y tooltips. */
+function dayStateLabel(pending: number, total: number): string {
+  if (pending) return `${pending} ${pending === 1 ? 'tarea pendiente' : 'tareas pendientes'}`
+  if (total) return 'sin tareas pendientes'
+  return 'sin entradas'
+}
+
 interface PeriodViewProps {
   periodKey: PeriodKey
   /** Nombre de la escala: «Día», «Mes»… o el de la colección. */
@@ -120,17 +132,22 @@ export function PeriodView({ periodKey, title, label, onNavigate, onJumpTo }: Pe
           <div className="week-strip" role="group" aria-label="Días de la semana">
             {weekStrip.map((day, index) => {
               const dayTotals = countEntries(entriesFor(entries, day))
+              const pending = dayTotals.openTasks
               return (
                 <button
                   key={day}
-                  className={`week-day ${dayTotals.openTasks ? 'has-open-tasks' : ''} ${day === periodKey ? 'active' : ''} ${day === today ? 'today' : ''}`}
+                  className={`week-day ${pending ? 'has-open-tasks' : ''} ${day === periodKey ? 'active' : ''} ${day === today ? 'today' : ''}`}
                   type="button"
                   onClick={() => onNavigate(day)}
                   aria-current={day === periodKey ? 'date' : undefined}
+                  aria-label={`${Number(day.slice(8))}: ${dayStateLabel(pending, dayTotals.total)}`}
+                  title={dayStateLabel(pending, dayTotals.total)}
                 >
-                  <span className="week-letter">{WEEKDAYS[index]}</span>
-                  <span className="week-number">{Number(day.slice(8))}</span>
-                  <span className={`week-dot ${dayTotals.open ? 'has-open' : dayTotals.total ? 'done' : ''}`} />
+                  <span className="week-letter" aria-hidden="true">{WEEKDAYS[index]}</span>
+                  <span className="week-number" aria-hidden="true">{Number(day.slice(8))}</span>
+                  <span className={`day-mark ${pending ? 'pending' : dayTotals.total ? 'done' : ''}`} aria-hidden="true">
+                    {pending ? markCount(pending) : ''}
+                  </span>
                 </button>
               )
             })}
@@ -201,16 +218,20 @@ export function PeriodView({ periodKey, title, label, onNavigate, onJumpTo }: Pe
             {monthGrid(periodKey).map((day, index) => {
               if (!day) return <span key={`empty-${index}`} className="calendar-cell empty" />
               const dayTotals = calendar.get(day)
+              const pending = dayTotals?.openTasks ?? 0
               return (
                 <button
                   key={day}
-                  className={`calendar-cell ${day === today ? 'today' : ''} ${dayTotals?.openTasks ? 'has-open-tasks' : dayTotals ? 'done' : ''}`}
+                  className={`calendar-cell ${pending ? 'has-open-tasks' : dayTotals ? 'done' : ''} ${day === today ? 'today' : ''}`}
                   type="button"
                   onClick={() => onJumpTo(day)}
-                  title={dayTotals ? `${dayTotals.open} pendientes · ${dayTotals.done} hechas` : 'Sin entradas'}
+                  title={dayTotals ? `${dayStateLabel(pending, dayTotals.total)} · ${dayTotals.done} hechas` : 'Sin entradas'}
+                  aria-label={`${Number(day.slice(8))}: ${dayStateLabel(pending, dayTotals?.total ?? 0)}`}
                 >
-                  {Number(day.slice(8))}
-                  {dayTotals && <span className="calendar-dot" />}
+                  <span className="calendar-number" aria-hidden="true">{Number(day.slice(8))}</span>
+                  <span className={`day-mark ${pending ? 'pending' : dayTotals ? 'done' : ''}`} aria-hidden="true">
+                    {pending ? markCount(pending) : ''}
+                  </span>
                 </button>
               )
             })}
