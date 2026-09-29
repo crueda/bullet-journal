@@ -385,10 +385,10 @@ code {
 }
 
 /*
- * Marcador de estado de un día, compartido por la tira semanal y el
- * calendario: pastilla con el número de tareas pendientes si queda algo
- * abierto, punto discreto si ya está todo cerrado. Ocupa siempre el mismo
- * alto para que los números no se descoloquen entre celdas.
+ * Marcador de un día, compartido por la tira semanal y el calendario:
+ * pastilla con el número de tareas sin cerrar. Solo se marca lo que queda
+ * pendiente; un día cerrado no lleva nada. Ocupa hueco aunque esté vacío
+ * para que los números no se descoloquen entre celdas.
  */
 .day-mark {
   display: grid;
@@ -406,14 +406,6 @@ code {
   padding: 0 4px;
   background: var(--highlight);
   color: var(--highlight-ink);
-}
-
-.day-mark.done::after {
-  content: '';
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: color-mix(in srgb, var(--ok) 80%, transparent);
 }
 
 /* ---------- Progreso ---------- */
@@ -557,11 +549,6 @@ code {
   border-color: color-mix(in srgb, var(--highlight) 38%, transparent);
   color: var(--ink);
   font-weight: 700;
-}
-
-.calendar-cell.done {
-  background: color-mix(in srgb, var(--ok) 16%, transparent);
-  color: var(--ink);
 }
 
 .calendar-cell.today {

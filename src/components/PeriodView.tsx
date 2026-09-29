@@ -145,7 +145,7 @@ export function PeriodView({ periodKey, title, label, onNavigate, onJumpTo }: Pe
                 >
                   <span className="week-letter" aria-hidden="true">{WEEKDAYS[index]}</span>
                   <span className="week-number" aria-hidden="true">{Number(day.slice(8))}</span>
-                  <span className={`day-mark ${pending ? 'pending' : dayTotals.total ? 'done' : ''}`} aria-hidden="true">
+                  <span className={`day-mark ${pending ? 'pending' : ''}`} aria-hidden="true">
                     {pending ? markCount(pending) : ''}
                   </span>
                 </button>
@@ -222,14 +222,14 @@ export function PeriodView({ periodKey, title, label, onNavigate, onJumpTo }: Pe
               return (
                 <button
                   key={day}
-                  className={`calendar-cell ${pending ? 'has-open-tasks' : dayTotals ? 'done' : ''} ${day === today ? 'today' : ''}`}
+                  className={`calendar-cell ${pending ? 'has-open-tasks' : ''} ${day === today ? 'today' : ''}`}
                   type="button"
                   onClick={() => onJumpTo(day)}
                   title={dayTotals ? `${dayStateLabel(pending, dayTotals.total)} · ${dayTotals.done} hechas` : 'Sin entradas'}
                   aria-label={`${Number(day.slice(8))}: ${dayStateLabel(pending, dayTotals?.total ?? 0)}`}
                 >
                   <span className="calendar-number" aria-hidden="true">{Number(day.slice(8))}</span>
-                  <span className={`day-mark ${pending ? 'pending' : dayTotals ? 'done' : ''}`} aria-hidden="true">
+                  <span className={`day-mark ${pending ? 'pending' : ''}`} aria-hidden="true">
                     {pending ? markCount(pending) : ''}
                   </span>
                 </button>
