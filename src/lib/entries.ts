@@ -64,6 +64,7 @@ export function nextOrder(entries: JournalEntry[], periodKey: PeriodKey): number
 export interface PeriodCounts {
   total: number
   open: number
+  openTasks: number
   done: number
   cancelled: number
   migrated: number
@@ -73,6 +74,7 @@ export interface PeriodCounts {
 
 export function countEntries(entries: JournalEntry[]): PeriodCounts {
   const tasks = entries.filter((entry) => entry.kind === 'task')
+  const openTasks = tasks.filter((entry) => entry.status === 'open').length
   const done = entries.filter((entry) => entry.status === 'done').length
   const cancelled = entries.filter((entry) => entry.status === 'cancelled').length
   const open = entries.length - done - cancelled
@@ -81,6 +83,7 @@ export function countEntries(entries: JournalEntry[]): PeriodCounts {
   return {
     total: entries.length,
     open,
+    openTasks,
     done,
     cancelled,
     migrated,
@@ -113,6 +116,7 @@ export function stalePeriodEntries(entries: JournalEntry[], today: LocalDate = t
 
 export interface DayCount {
   open: number
+  openTasks: number
   done: number
   total: number
 }
@@ -123,7 +127,14 @@ export function dayCounts(entries: JournalEntry[], monthKey: PeriodKey): Map<Loc
   for (const day of monthGrid(monthKey)) {
     if (!day) continue
     const counts = countEntries(entriesFor(entries, day))
-    if (counts.total) result.set(day, { open: counts.open, done: counts.done, total: counts.total })
+    if (counts.total) {
+      result.set(day, {
+        open: counts.open,
+        openTasks: counts.openTasks,
+        done: counts.done,
+        total: counts.total,
+      })
+    }
   }
   return result
 }

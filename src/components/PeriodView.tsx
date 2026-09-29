@@ -123,7 +123,7 @@ export function PeriodView({ periodKey, title, label, onNavigate, onJumpTo }: Pe
               return (
                 <button
                   key={day}
-                  className={`week-day ${day === periodKey ? 'active' : ''} ${day === today ? 'today' : ''}`}
+                  className={`week-day ${dayTotals.openTasks ? 'has-open-tasks' : ''} ${day === periodKey ? 'active' : ''} ${day === today ? 'today' : ''}`}
                   type="button"
                   onClick={() => onNavigate(day)}
                   aria-current={day === periodKey ? 'date' : undefined}
@@ -204,7 +204,7 @@ export function PeriodView({ periodKey, title, label, onNavigate, onJumpTo }: Pe
               return (
                 <button
                   key={day}
-                  className={`calendar-cell ${day === today ? 'today' : ''} ${dayTotals?.open ? 'has-open' : dayTotals ? 'done' : ''}`}
+                  className={`calendar-cell ${day === today ? 'today' : ''} ${dayTotals?.openTasks ? 'has-open-tasks' : dayTotals ? 'done' : ''}`}
                   type="button"
                   onClick={() => onJumpTo(day)}
                   title={dayTotals ? `${dayTotals.open} pendientes · ${dayTotals.done} hechas` : 'Sin entradas'}

@@ -96,8 +96,23 @@ describe('dayCounts', () => {
       entry({ id: '2', periodKey: '2026-09-01', status: 'done' }),
       entry({ id: '3', periodKey: '2026-10-01' }),
     ], '2026-09')
-    expect(counts.get('2026-09-01' as LocalDate)).toEqual({ open: 1, done: 1, total: 2 })
+    expect(counts.get('2026-09-01' as LocalDate)).toEqual({
+      open: 1,
+      openTasks: 1,
+      done: 1,
+      total: 2,
+    })
     expect(counts.has('2026-10-01' as LocalDate)).toBe(false)
+  })
+
+  it('distingue las tareas abiertas de las notas', () => {
+    const counts = dayCounts([
+      entry({ id: 'tarea', periodKey: '2026-09-01' }),
+      entry({ id: 'nota', periodKey: '2026-09-02', kind: 'note' }),
+    ], '2026-09')
+
+    expect(counts.get('2026-09-01' as LocalDate)?.openTasks).toBe(1)
+    expect(counts.get('2026-09-02' as LocalDate)?.openTasks).toBe(0)
   })
 })
 

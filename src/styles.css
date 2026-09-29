@@ -355,6 +355,11 @@ code {
   border-color: color-mix(in srgb, var(--highlight) 55%, transparent);
 }
 
+.week-day.has-open-tasks {
+  background: var(--highlight-soft);
+  color: var(--ink);
+}
+
 .week-day.active {
   background: var(--accent);
   color: var(--accent-ink);
@@ -517,7 +522,7 @@ code {
   visibility: hidden;
 }
 
-.calendar-cell.has-open {
+.calendar-cell.has-open-tasks {
   background: var(--highlight-soft);
   color: var(--ink);
   font-weight: 600;
