@@ -75,7 +75,7 @@ export default function App() {
     return (
       <main className="loading-screen">
         <div className="brand-mark"><span>•</span></div>
-        <h1>Koyomi</h1>
+        <h1>Techō · <span lang="ja">手帳</span></h1>
         <p>Abriendo tu cuaderno…</p>
         <i />
       </main>

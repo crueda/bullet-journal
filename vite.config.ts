@@ -14,8 +14,8 @@ export default defineConfig({
       registerType: 'prompt',
       includeAssets: ['icon.svg'],
       manifest: {
-        name: 'Koyomi — Bullet journal',
-        short_name: 'Koyomi',
+        name: 'Techō — Bullet journal',
+        short_name: 'Techō',
         description: 'Tu bullet journal personal: tareas por día, mes, trimestre y año.',
         theme_color: '#24304d',
         background_color: '#f7f4ed',
