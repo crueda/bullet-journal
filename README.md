@@ -16,7 +16,7 @@ Cuatro escalas de tiempo en el menú inferior, más una pestaña de herramientas
   cualquiera de ellos.
 - **Trimestre** — escala intermedia, útil para objetivos que no caben en un mes ni llegan al año.
 - **Año** — el *future log*.
-- **Más** — colecciones, buscador, estadísticas y ajustes.
+- **Más** — colecciones, pagos recurrentes, buscador, estadísticas y ajustes.
 
 ### Mover tareas
 
@@ -49,6 +49,9 @@ Mover es la operación central del método, así que está a un toque:
   `-` nota, `o` evento y `#etiqueta` (crea la etiqueta si no existe).
 - **Reordenar** arrastrando dentro de cada periodo.
 - **Colecciones** temáticas fuera del calendario (libros, ideas, compras…), archivables.
+- **Pagos recurrentes**: suscripciones y cuotas semanales, mensuales, trimestrales o anuales con
+  alta, edición, baja y borrado. Resumen de gasto mensual y anual, próximos 30 días, y marcas de
+  color en el calendario del mes y en la tira de la semana; cada día muestra lo que vence.
 - **Etiquetas** con color, editables desde Ajustes.
 - **Buscador** por texto, estado, tipo y etiqueta, sin tildes ni mayúsculas.
 - **Estadísticas**: racha de días cerrados, recuento por escala, uso de etiquetas del año y ranking de
@@ -82,6 +85,9 @@ Modelo (`src/types.ts`):
 
 - `JournalEntry` — entrada del diario: tipo, título, notas, estado, marcas, etiquetas, orden, número de
   migraciones y **clave de periodo**.
+- `Subscription` — pago recurrente: importe, moneda, periodicidad, fecha del primer cobro (ancla de
+  los vencimientos; un cobro el 31 cae el último día en meses cortos) y fecha de fin opcional. La
+  aritmética de vencimientos vive en `src/lib/subscriptions.ts`.
 - `Tag`, `Collection`, `Preferences`.
 
 La clave de periodo (`periodKey`) identifica dónde vive cada entrada y es lo único que cambia al migrarla:

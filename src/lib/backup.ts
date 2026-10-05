@@ -1,21 +1,27 @@
 import type {
   AppSnapshot,
   BackupData,
+  BillingCycle,
   Collection,
   EntryKind,
   EntryStatus,
   JournalEntry,
   Preferences,
+  Subscription,
   Tag,
 } from '../types'
 import { BACKUP_FORMAT, BACKUP_VERSION } from './compatibility'
 import { bulletSymbol, entriesFor, KIND_LABELS, liveEntries, STATUS_LABELS } from './entries'
 import { currentKey, isPeriodKey, periodLabel, scopeOf } from './periods'
+import { CYCLE_SUFFIX, CYCLES, formatMoney, liveSubscriptions, nextDueDate } from './subscriptions'
+import { toLocalDate } from './dates'
 
 const COLOR_PATTERN = /^#[0-9a-f]{6}$/i
 const ID_PATTERN = /^[A-Za-z0-9_-]+$/
 const KINDS: EntryKind[] = ['task', 'event', 'note']
 const STATUSES: EntryStatus[] = ['open', 'done', 'cancelled']
+const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/
+const CURRENCY_PATTERN = /^[A-Z]{3}$/
 
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -68,6 +74,39 @@ function parseCollection(value: unknown): Collection | undefined {
     createdAt: value.createdAt,
     updatedAt: value.updatedAt,
     ...(value.archivedAt ? { archivedAt: value.archivedAt } : {}),
+  }
+}
+
+function isDate(value: unknown): value is string {
+  return typeof value === 'string' && DATE_PATTERN.test(value)
+}
+
+function parseSubscription(value: unknown): Subscription | undefined {
+  if (!isObject(value)) return
+  if (
+    typeof value.id !== 'string' || !ID_PATTERN.test(value.id)
+    || !isName(value.name, 80)
+    || typeof value.amount !== 'number' || !Number.isFinite(value.amount) || value.amount < 0
+    || typeof value.currency !== 'string' || !CURRENCY_PATTERN.test(value.currency)
+    || !CYCLES.includes(value.cycle as BillingCycle)
+    || !isDate(value.startDate)
+    || (value.endDate !== undefined && (!isDate(value.endDate) || value.endDate < value.startDate))
+    || typeof value.color !== 'string' || !COLOR_PATTERN.test(value.color)
+    || (value.notes !== undefined && typeof value.notes !== 'string')
+    || !isTimestamp(value.createdAt) || !isTimestamp(value.updatedAt)
+  ) return
+  return {
+    id: value.id,
+    name: value.name.trim(),
+    amount: value.amount,
+    currency: value.currency,
+    cycle: value.cycle as BillingCycle,
+    startDate: value.startDate as Subscription['startDate'],
+    ...(value.endDate ? { endDate: value.endDate as Subscription['startDate'] } : {}),
+    color: value.color,
+    ...(value.notes ? { notes: String(value.notes).slice(0, 4_000) } : {}),
+    createdAt: value.createdAt,
+    updatedAt: value.updatedAt,
   }
 }
 
@@ -134,6 +173,7 @@ export function createBackup(snapshot: AppSnapshot): BackupData {
     entries: liveEntries(snapshot.entries),
     tags: snapshot.tags.filter((tag) => !tag.deletedAt),
     collections: snapshot.collections.filter((collection) => !collection.deletedAt),
+    subscriptions: snapshot.subscriptions.filter((subscription) => !subscription.deletedAt),
     preferences: snapshot.preferences,
   }
 }
@@ -147,6 +187,7 @@ export function parseBackup(value: unknown): BackupData {
     || !Array.isArray(value.entries)
     || !Array.isArray(value.tags)
     || !Array.isArray(value.collections)
+    || (value.subscriptions !== undefined && !Array.isArray(value.subscriptions))
   ) {
     throw new Error('La copia está incompleta o dañada.')
   }
@@ -171,6 +212,14 @@ export function parseBackup(value: unknown): BackupData {
     throw new Error('La copia contiene entradas duplicadas.')
   }
 
+  // Las copias anteriores a los pagos recurrentes no traen este campo.
+  const parsedSubscriptions = ((value.subscriptions ?? []) as unknown[]).map(parseSubscription)
+  if (parsedSubscriptions.some((subscription) => !subscription)) throw new Error('La copia contiene pagos no válidos.')
+  const subscriptions = parsedSubscriptions as Subscription[]
+  if (new Set(subscriptions.map((subscription) => subscription.id)).size !== subscriptions.length) {
+    throw new Error('La copia contiene pagos duplicados.')
+  }
+
   const preferences = parsePreferences(value.preferences)
   if (!preferences) throw new Error('La copia contiene preferencias no válidas.')
 
@@ -181,6 +230,7 @@ export function parseBackup(value: unknown): BackupData {
     entries,
     tags,
     collections,
+    subscriptions,
     preferences,
   }
 }
@@ -224,6 +274,18 @@ export function createMarkdownReport(snapshot: AppSnapshot): string {
         lines.push('')
       }
     }
+  }
+
+  const today = toLocalDate()
+  const subscriptions = liveSubscriptions(snapshot.subscriptions)
+  if (subscriptions.length) {
+    lines.push('## Pagos recurrentes', '')
+    for (const subscription of subscriptions) {
+      const next = nextDueDate(subscription, today)
+      const due = next ? `próximo cobro ${next.split('-').reverse().join('/')}` : 'finalizado'
+      lines.push(`- ${subscription.name}: ${formatMoney(subscription.amount, subscription.currency)} / ${CYCLE_SUFFIX[subscription.cycle]} — ${due}`)
+    }
+    lines.push('')
   }
 
   return lines.join('\n')

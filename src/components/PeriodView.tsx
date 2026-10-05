@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { AlarmClock, CalendarDays, ChevronLeft, ChevronRight, ListChecks, Undo2 } from 'lucide-react'
-import type { JournalEntry, LocalDate, PeriodKey } from '../types'
+import type { JournalEntry, LocalDate, PeriodKey, Subscription } from '../types'
 import {
   countEntries,
   entriesFor,
@@ -16,6 +16,7 @@ import {
   currentKey,
   firstDayOf,
   isCurrentPeriod,
+  lastDayOf,
   monthGrid,
   parentKey,
   periodLabel,
@@ -25,12 +26,14 @@ import {
   shiftPeriod,
 } from '../lib/periods'
 import { addDays, startOfWeek, toLocalDate } from '../lib/dates'
+import { duePayments, formatTotals, paymentsByDay, totalsByCurrency, type DuePayment } from '../lib/subscriptions'
 import { useJournal } from '../state/JournalContext'
 import { EntryList } from './EntryList'
 import { QuickAdd } from './QuickAdd'
 import { EntryEditor } from './EntryEditor'
 import { MoveSheet } from './MoveSheet'
 import { MigrationSheet } from './MigrationSheet'
+import { PaymentList, SubscriptionEditor } from './SubscriptionsView'
 
 const WEEKDAYS = ['L', 'M', 'X', 'J', 'V', 'S', 'D']
 type MonthView = 'tasks' | 'calendar'
@@ -47,6 +50,25 @@ function dayStateLabel(pending: number, total: number): string {
   return 'sin entradas'
 }
 
+function paymentsLabel(payments: Subscription[] = []): string {
+  if (!payments.length) return ''
+  return ` · ${payments.length === 1 ? `vence ${payments[0].name}` : `vencen ${payments.length} pagos`}`
+}
+
+/** Hasta tres puntos con el color de cada pago que vence ese día. */
+function PayDots({ payments }: { payments?: Subscription[] }) {
+  if (!payments?.length) return null
+  return (
+    <span className="pay-dots" aria-hidden="true">
+      {payments.slice(0, 3).map((item) => <i key={item.id} style={{ background: item.color }} />)}
+    </span>
+  )
+}
+
+function paymentsTotal(payments: DuePayment[]): string {
+  return formatTotals(totalsByCurrency(payments.map(({ subscription }) => subscription)))
+}
+
 interface PeriodViewProps {
   periodKey: PeriodKey
   /** Nombre de la escala: «Día», «Mes»… o el de la colección. */
@@ -58,7 +80,7 @@ interface PeriodViewProps {
 }
 
 export function PeriodView({ periodKey, title, label, onNavigate, onJumpTo }: PeriodViewProps) {
-  const { entries, tags, preferences, toggleEntryDone, reorderEntries, undoMove } = useJournal()
+  const { entries, tags, subscriptions, preferences, toggleEntryDone, reorderEntries, undoMove } = useJournal()
   const today = toLocalDate()
   const scope = scopeOf(periodKey)
 
@@ -67,6 +89,7 @@ export function PeriodView({ periodKey, title, label, onNavigate, onJumpTo }: Pe
   const [reviewing, setReviewing] = useState(false)
   const [showClosed, setShowClosed] = useState(preferences.showCompleted)
   const [monthView, setMonthView] = useState<MonthView>('tasks')
+  const [payment, setPayment] = useState<Subscription>()
 
   const visible = useMemo(() => entriesFor(entries, periodKey), [entries, periodKey])
   const open = visible.filter(isOpen)
@@ -88,6 +111,24 @@ export function PeriodView({ periodKey, title, label, onNavigate, onJumpTo }: Pe
   const weekStrip = scope === 'day'
     ? Array.from({ length: 7 }, (_, index) => addDays(startOfWeek(periodKey as LocalDate), index))
     : []
+
+  const paymentRange = useMemo((): [LocalDate, LocalDate] | undefined => {
+    if (scope === 'month') return [firstDayOf(periodKey), lastDayOf(periodKey)]
+    if (scope === 'day') {
+      const monday = startOfWeek(periodKey as LocalDate)
+      return [monday, addDays(monday, 6)]
+    }
+    return undefined
+  }, [periodKey, scope])
+  const payments = useMemo(
+    () => (paymentRange ? duePayments(subscriptions, ...paymentRange) : []),
+    [paymentRange, subscriptions],
+  )
+  const paymentDays = useMemo(
+    () => (paymentRange ? paymentsByDay(subscriptions, ...paymentRange) : new Map<LocalDate, Subscription[]>()),
+    [paymentRange, subscriptions],
+  )
+  const dayPayments = scope === 'day' ? payments.filter(({ date }) => date === periodKey) : []
 
   return (
     <>
@@ -140,9 +181,10 @@ export function PeriodView({ periodKey, title, label, onNavigate, onJumpTo }: Pe
                   type="button"
                   onClick={() => onNavigate(day)}
                   aria-current={day === periodKey ? 'date' : undefined}
-                  aria-label={`${Number(day.slice(8))}: ${dayStateLabel(pending, dayTotals.total)}`}
-                  title={dayStateLabel(pending, dayTotals.total)}
+                  aria-label={`${Number(day.slice(8))}: ${dayStateLabel(pending, dayTotals.total)}${paymentsLabel(paymentDays.get(day))}`}
+                  title={`${dayStateLabel(pending, dayTotals.total)}${paymentsLabel(paymentDays.get(day))}`}
                 >
+                  <PayDots payments={paymentDays.get(day)} />
                   <span className="week-letter" aria-hidden="true">{WEEKDAYS[index]}</span>
                   <span className="week-number" aria-hidden="true">{Number(day.slice(8))}</span>
                   <span className={`day-mark ${pending ? 'pending' : ''}`} aria-hidden="true">
@@ -225,9 +267,10 @@ export function PeriodView({ periodKey, title, label, onNavigate, onJumpTo }: Pe
                   className={`calendar-cell ${pending ? 'has-open-tasks' : ''} ${day === today ? 'today' : ''}`}
                   type="button"
                   onClick={() => onJumpTo(day)}
-                  title={dayTotals ? `${dayStateLabel(pending, dayTotals.total)} · ${dayTotals.done} hechas` : 'Sin entradas'}
-                  aria-label={`${Number(day.slice(8))}: ${dayStateLabel(pending, dayTotals?.total ?? 0)}`}
+                  title={`${dayTotals ? `${dayStateLabel(pending, dayTotals.total)} · ${dayTotals.done} hechas` : 'Sin entradas'}${paymentsLabel(paymentDays.get(day))}`}
+                  aria-label={`${Number(day.slice(8))}: ${dayStateLabel(pending, dayTotals?.total ?? 0)}${paymentsLabel(paymentDays.get(day))}`}
                 >
+                  <PayDots payments={paymentDays.get(day)} />
                   <span className="calendar-number" aria-hidden="true">{Number(day.slice(8))}</span>
                   <span className={`day-mark ${pending ? 'pending' : ''}`} aria-hidden="true">
                     {pending ? markCount(pending) : ''}
@@ -236,6 +279,26 @@ export function PeriodView({ periodKey, title, label, onNavigate, onJumpTo }: Pe
               )
             })}
           </div>
+        )}
+
+        {scope === 'month' && monthView === 'calendar' && payments.length > 0 && (
+          <section className="payments-due" aria-label="Pagos del mes">
+            <div className="payments-due-head">
+              <h3 className="field-label">Pagos del mes</h3>
+              <span>{paymentsTotal(payments)}</span>
+            </div>
+            <PaymentList payments={payments} today={today} onOpen={setPayment} />
+          </section>
+        )}
+
+        {dayPayments.length > 0 && (
+          <section className="payments-due" aria-label="Pagos que vencen este día">
+            <div className="payments-due-head">
+              <h3 className="field-label">{periodKey === today ? 'Vence hoy' : 'Vence este día'}</h3>
+              <span>{paymentsTotal(dayPayments)}</span>
+            </div>
+            <PaymentList payments={dayPayments} today={today} hideDate onOpen={setPayment} />
+          </section>
         )}
 
         {(scope !== 'month' || monthView === 'tasks') && (
@@ -329,6 +392,7 @@ export function PeriodView({ periodKey, title, label, onNavigate, onJumpTo }: Pe
           onClose={() => setMoving(undefined)}
         />
       )}
+      {payment && <SubscriptionEditor subscription={payment} onClose={() => setPayment(undefined)} />}
       {reviewing && <MigrationSheet today={today} onClose={() => setReviewing(false)} />}
     </>
   )

@@ -8,6 +8,7 @@ import type {
   Preferences,
   SyncEntity,
   SyncRecord,
+  Subscription,
   Tag,
 } from '../types'
 import { DEFAULT_PREFERENCES } from '../types'
@@ -22,16 +23,18 @@ interface JournalDatabase extends DBSchema {
   }
   tags: { key: string; value: Tag }
   collections: { key: string; value: Collection }
+  subscriptions: { key: string; value: Subscription }
   preferences: { key: 'current'; value: Preferences }
   queue: { key: string; value: PendingOperation; indexes: { 'by-queued-at': string } }
 }
 
-type StoreName = 'entries' | 'tags' | 'collections'
+type StoreName = 'entries' | 'tags' | 'collections' | 'subscriptions'
 
 const STORES: Record<SyncEntity, StoreName> = {
   entry: 'entries',
   tag: 'tags',
   collection: 'collections',
+  subscription: 'subscriptions',
 }
 
 let databasePromise: Promise<IDBPDatabase<JournalDatabase>> | undefined
@@ -46,6 +49,7 @@ function database() {
       }
       if (!db.objectStoreNames.contains('tags')) db.createObjectStore('tags', { keyPath: 'id' })
       if (!db.objectStoreNames.contains('collections')) db.createObjectStore('collections', { keyPath: 'id' })
+      if (!db.objectStoreNames.contains('subscriptions')) db.createObjectStore('subscriptions', { keyPath: 'id' })
       if (!db.objectStoreNames.contains('preferences')) db.createObjectStore('preferences')
       if (!db.objectStoreNames.contains('queue')) {
         const queue = db.createObjectStore('queue', { keyPath: 'id' })
@@ -86,16 +90,18 @@ async function seedIfNeeded(db: IDBPDatabase<JournalDatabase>): Promise<void> {
 export async function loadSnapshot(): Promise<AppSnapshot> {
   const db = await database()
   await seedIfNeeded(db)
-  const [entries, tags, collections, preferences] = await Promise.all([
+  const [entries, tags, collections, subscriptions, preferences] = await Promise.all([
     db.getAll('entries'),
     db.getAll('tags'),
     db.getAll('collections'),
+    db.getAll('subscriptions'),
     db.get('preferences', 'current'),
   ])
   return {
     entries,
     tags,
     collections,
+    subscriptions,
     preferences: { ...DEFAULT_PREFERENCES, hasSeededDefaults: true, ...preferences },
   }
 }
@@ -127,6 +133,10 @@ export async function saveTag(tag: Tag, queue = true): Promise<void> {
 
 export async function saveCollection(collection: Collection, queue = true): Promise<void> {
   await saveRecords('collection', [collection], queue)
+}
+
+export async function saveSubscription(subscription: Subscription, queue = true): Promise<void> {
+  await saveRecords('subscription', [subscription], queue)
 }
 
 export async function savePreferences(preferences: Preferences): Promise<void> {
@@ -169,24 +179,27 @@ export async function replaceWithBackup(backup: BackupData): Promise<void> {
   const db = await database()
   const current = await loadSnapshot()
   const now = new Date().toISOString()
-  const transaction = db.transaction(['entries', 'tags', 'collections', 'preferences', 'queue'], 'readwrite')
+  const transaction = db.transaction(['entries', 'tags', 'collections', 'subscriptions', 'preferences', 'queue'], 'readwrite')
   const stores = {
     entry: transaction.objectStore('entries'),
     tag: transaction.objectStore('tags'),
     collection: transaction.objectStore('collections'),
+    subscription: transaction.objectStore('subscriptions'),
   }
   const queueStore = transaction.objectStore('queue')
-  await Promise.all([stores.entry.clear(), stores.tag.clear(), stores.collection.clear(), queueStore.clear()])
+  await Promise.all([stores.entry.clear(), stores.tag.clear(), stores.collection.clear(), stores.subscription.clear(), queueStore.clear()])
 
   const imported: Array<[SyncEntity, SyncRecord[]]> = [
     ['entry', backup.entries],
     ['tag', backup.tags],
     ['collection', backup.collections],
+    ['subscription', backup.subscriptions],
   ]
   const existing: Array<[SyncEntity, SyncRecord[]]> = [
     ['entry', current.entries],
     ['tag', current.tags],
     ['collection', current.collections],
+    ['subscription', current.subscriptions],
   ]
 
   for (const [entity, records] of imported) {

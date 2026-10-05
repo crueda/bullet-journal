@@ -55,6 +55,19 @@ const snapshot: AppSnapshot = {
   ],
   tags: [{ id: 't1', name: 'Trabajo', color: '#2f6f8f', createdAt: '2026-09-01T08:00:00.000Z', updatedAt: '2026-09-01T08:00:00.000Z' }],
   collections: [{ id: 'c1', name: 'Ideas', color: '#7a5bb0', order: 0, createdAt: '2026-09-01T08:00:00.000Z', updatedAt: '2026-09-01T08:00:00.000Z' }],
+  subscriptions: [
+    {
+      id: 's1',
+      name: 'Netflix',
+      amount: 12.99,
+      currency: 'EUR',
+      cycle: 'monthly',
+      startDate: '2026-01-15',
+      color: '#c2503f',
+      createdAt: '2026-09-01T08:00:00.000Z',
+      updatedAt: '2026-09-01T08:00:00.000Z',
+    },
+  ],
   preferences: { ...DEFAULT_PREFERENCES, hasSeededDefaults: true },
 }
 
@@ -73,6 +86,23 @@ describe('parseBackup', () => {
     expect(parsed.entries).toHaveLength(2)
     expect(parsed.entries[0]).toMatchObject({ id: 'e1', priority: true, migrationCount: 2 })
     expect(parsed.tags).toHaveLength(1)
+  })
+
+  it('conserva los pagos recurrentes', () => {
+    const parsed = parseBackup(JSON.parse(JSON.stringify(createBackup(snapshot))))
+    expect(parsed.subscriptions).toEqual(snapshot.subscriptions)
+  })
+
+  it('acepta copias anteriores sin pagos recurrentes', () => {
+    const legacy: Partial<ReturnType<typeof createBackup>> = createBackup(snapshot)
+    delete legacy.subscriptions
+    expect(parseBackup(JSON.parse(JSON.stringify(legacy))).subscriptions).toEqual([])
+  })
+
+  it('rechaza pagos con periodicidad desconocida', () => {
+    const backup = createBackup(snapshot)
+    const broken = { ...backup, subscriptions: [{ ...backup.subscriptions[0], cycle: 'diario' }] }
+    expect(() => parseBackup(JSON.parse(JSON.stringify(broken)))).toThrow(/pagos no válidos/)
   })
 
   it('rechaza formatos ajenos', () => {
@@ -104,5 +134,6 @@ describe('createMarkdownReport', () => {
     expect(report).toContain('# Techō')
     expect(report).toContain('## Colecciones')
     expect(report).toContain('Idea para el blog')
+    expect(report).toContain('## Pagos recurrentes')
   })
 })

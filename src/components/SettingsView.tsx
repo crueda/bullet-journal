@@ -20,6 +20,7 @@ export function SettingsView() {
     entries,
     tags,
     collections,
+    subscriptions,
     preferences,
     sync,
     updatePreferences,
@@ -33,7 +34,7 @@ export function SettingsView() {
   const [message, setMessage] = useState<{ tone: 'ok' | 'error'; text: string }>()
   const [tagEditor, setTagEditor] = useState<{ open: boolean; tag?: Tag }>({ open: false })
 
-  const snapshot = { entries, tags, collections, preferences }
+  const snapshot = { entries, tags, collections, subscriptions, preferences }
 
   const exportBackup = () => {
     downloadText(

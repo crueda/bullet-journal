@@ -4,11 +4,13 @@ import { CollectionsView } from './CollectionsView'
 import { SearchView } from './SearchView'
 import { StatsView } from './StatsView'
 import { SettingsView } from './SettingsView'
+import { SubscriptionsView } from './SubscriptionsView'
 
-type Section = 'collections' | 'search' | 'stats' | 'settings'
+type Section = 'collections' | 'payments' | 'search' | 'stats' | 'settings'
 
 const SECTIONS: Array<{ id: Section; label: string }> = [
   { id: 'collections', label: 'Colecciones' },
+  { id: 'payments', label: 'Pagos' },
   { id: 'search', label: 'Buscar' },
   { id: 'stats', label: 'Datos' },
   { id: 'settings', label: 'Ajustes' },
@@ -38,6 +40,7 @@ export function MoreView({ onOpenCollection, onJumpTo }: MoreViewProps) {
       </div>
 
       {section === 'collections' && <CollectionsView onOpen={onOpenCollection} />}
+      {section === 'payments' && <SubscriptionsView />}
       {section === 'search' && <SearchView onJumpTo={onJumpTo} />}
       {section === 'stats' && <StatsView onJumpTo={onJumpTo} />}
       {section === 'settings' && <SettingsView />}

@@ -343,6 +343,7 @@ code {
 }
 
 .week-day {
+  position: relative;
   display: grid;
   justify-items: center;
   gap: 2px;
@@ -937,6 +938,7 @@ code {
 
 .field input,
 .field textarea,
+.field select,
 .custom-date input,
 .search-field input {
   width: 100%;
@@ -1543,4 +1545,123 @@ code {
     animation-duration: 0.001ms !important;
     transition-duration: 0.001ms !important;
   }
+}
+
+/* ---------- Pagos recurrentes ---------- */
+
+.stack.tight {
+  gap: 8px;
+}
+
+.field-pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 10px;
+}
+
+.payment-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.payment-summary > div {
+  display: grid;
+  gap: 3px;
+  padding: 11px 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+  min-width: 0;
+}
+
+.payment-summary small {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.payment-summary strong {
+  font-size: 1rem;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.payment-list {
+  display: grid;
+  gap: 6px;
+}
+
+.payment-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+  color: var(--ink);
+  text-align: left;
+}
+
+.payment-row.past {
+  opacity: 0.6;
+}
+
+.payment-name {
+  flex: 1;
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.payment-name strong {
+  overflow-wrap: anywhere;
+}
+
+.payment-name small {
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.payment-amount {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.payments-due {
+  display: grid;
+  gap: 8px;
+}
+
+.payments-due-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.payments-due-head span {
+  font-size: 0.8rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.pay-dots {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  display: flex;
+  gap: 2px;
+}
+
+.pay-dots i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px var(--surface);
 }

@@ -67,6 +67,39 @@ export interface Collection {
   deletedAt?: string
 }
 
+/** Periodicidad de un pago recurrente. */
+export type BillingCycle = 'weekly' | 'monthly' | 'quarterly' | 'yearly'
+
+/** Pago recurrente: suscripciones, cuotas, seguros… */
+export interface Subscription {
+  id: string
+  name: string
+  amount: number
+  /** Código ISO 4217: EUR, USD… */
+  currency: string
+  cycle: BillingCycle
+  /** Fecha del primer cobro; ancla el resto de vencimientos. */
+  startDate: LocalDate
+  /** Último día en que puede haber cobro. Sin fecha, sigue indefinidamente. */
+  endDate?: LocalDate
+  color: string
+  notes?: string
+  createdAt: string
+  updatedAt: string
+  deletedAt?: string
+}
+
+export interface SubscriptionDraft {
+  name: string
+  amount: number
+  currency: string
+  cycle: BillingCycle
+  startDate: LocalDate
+  endDate?: LocalDate
+  color: string
+  notes?: string
+}
+
 export type ThemePreference = 'system' | 'light' | 'dark'
 
 export interface Preferences {
@@ -85,7 +118,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
   showCompleted: true,
 }
 
-export type SyncEntity = 'entry' | 'tag' | 'collection'
+export type SyncEntity = 'entry' | 'tag' | 'collection' | 'subscription'
 
 export interface PendingOperation {
   id: string
@@ -106,6 +139,7 @@ export interface AppSnapshot {
   entries: JournalEntry[]
   tags: Tag[]
   collections: Collection[]
+  subscriptions: Subscription[]
   preferences: Preferences
 }
 
@@ -116,6 +150,7 @@ export interface BackupData {
   entries: JournalEntry[]
   tags: Tag[]
   collections: Collection[]
+  subscriptions: Subscription[]
   preferences: Preferences
 }
 
@@ -140,4 +175,4 @@ export interface CollectionDraft {
   color: string
 }
 
-export type SyncRecord = JournalEntry | Tag | Collection
+export type SyncRecord = JournalEntry | Tag | Collection | Subscription

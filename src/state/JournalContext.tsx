@@ -18,6 +18,8 @@ import type {
   JournalEntry,
   PeriodKey,
   Preferences,
+  Subscription,
+  SubscriptionDraft,
   SyncStatus,
   Tag,
   TagDraft,
@@ -32,6 +34,7 @@ import {
   saveEntries,
   saveEntry,
   savePreferences,
+  saveSubscription,
   saveTag,
 } from '../data/local-db'
 import type { CloudSync as CloudSyncInstance } from '../data/cloud-sync'
@@ -61,6 +64,9 @@ interface JournalContextValue extends AppSnapshot {
   updateCollection: (id: string, draft: CollectionDraft) => Promise<void>
   archiveCollection: (id: string, archived: boolean) => Promise<void>
   deleteCollection: (id: string) => Promise<void>
+  createSubscription: (draft: SubscriptionDraft) => Promise<Subscription>
+  updateSubscription: (id: string, draft: SubscriptionDraft) => Promise<void>
+  deleteSubscription: (id: string) => Promise<void>
   updatePreferences: (preferences: Preferences) => Promise<void>
   importBackup: (backup: BackupData) => Promise<void>
   retrySync: () => Promise<void>
@@ -74,11 +80,26 @@ function upsert<T extends { id: string }>(items: T[], value: T): T[] {
     : [...items, value]
 }
 
+/** Normaliza un borrador: sin espacios sobrantes ni campos opcionales vacíos (Firestore no admite undefined). */
+function cleanSubscriptionDraft(draft: SubscriptionDraft): SubscriptionDraft {
+  return {
+    name: draft.name.trim(),
+    amount: Math.round(draft.amount * 100) / 100,
+    currency: draft.currency,
+    cycle: draft.cycle,
+    startDate: draft.startDate,
+    ...(draft.endDate ? { endDate: draft.endDate } : {}),
+    color: draft.color,
+    ...(draft.notes?.trim() ? { notes: draft.notes.trim() } : {}),
+  }
+}
+
 export function JournalProvider({ children }: { children: ReactNode }) {
   const [snapshot, setSnapshot] = useState<AppSnapshot>({
     entries: [],
     tags: [],
     collections: [],
+    subscriptions: [],
     preferences: DEFAULT_PREFERENCES,
   })
   const snapshotRef = useRef(snapshot)
@@ -342,6 +363,42 @@ export function JournalProvider({ children }: { children: ReactNode }) {
     await patchCollection(id, { deletedAt: now })
   }, [patchCollection, putEntries])
 
+  const putSubscription = useCallback(async (subscription: Subscription) => {
+    await saveSubscription(subscription)
+    updateSnapshot((state) => ({ ...state, subscriptions: upsert(state.subscriptions, subscription) }))
+    notifyCloud()
+  }, [notifyCloud, updateSnapshot])
+
+  const createSubscription = useCallback(async (draft: SubscriptionDraft) => {
+    const now = new Date().toISOString()
+    const subscription: Subscription = {
+      ...cleanSubscriptionDraft(draft),
+      id: crypto.randomUUID(),
+      createdAt: now,
+      updatedAt: now,
+    }
+    await putSubscription(subscription)
+    return subscription
+  }, [putSubscription])
+
+  const updateSubscription = useCallback(async (id: string, draft: SubscriptionDraft) => {
+    const current = snapshotRef.current.subscriptions.find((item) => item.id === id)
+    if (!current) return
+    await putSubscription({
+      id,
+      createdAt: current.createdAt,
+      ...cleanSubscriptionDraft(draft),
+      updatedAt: new Date().toISOString(),
+    })
+  }, [putSubscription])
+
+  const deleteSubscription = useCallback(async (id: string) => {
+    const current = snapshotRef.current.subscriptions.find((item) => item.id === id)
+    if (!current) return
+    const now = new Date().toISOString()
+    await putSubscription({ ...current, deletedAt: now, updatedAt: now })
+  }, [putSubscription])
+
   const updatePreferences = useCallback(async (preferences: Preferences) => {
     await savePreferences(preferences)
     updateSnapshot((state) => ({ ...state, preferences }))
@@ -375,6 +432,9 @@ export function JournalProvider({ children }: { children: ReactNode }) {
     updateCollection,
     archiveCollection,
     deleteCollection,
+    createSubscription,
+    updateSubscription,
+    deleteSubscription,
     updatePreferences,
     importBackup,
     retrySync: async () => cloudRef.current?.retry(),
@@ -399,6 +459,9 @@ export function JournalProvider({ children }: { children: ReactNode }) {
     updateCollection,
     archiveCollection,
     deleteCollection,
+    createSubscription,
+    updateSubscription,
+    deleteSubscription,
     updatePreferences,
     importBackup,
   ])

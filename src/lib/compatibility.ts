@@ -1,6 +1,6 @@
 // Identificadores estables: no deben cambiar aunque cambie la marca visible.
 export const DATABASE_NAME = 'bullet-journal'
-export const DATABASE_VERSION = 1
+export const DATABASE_VERSION = 2
 export const THEME_STORAGE_KEY = 'bujo-theme'
 export const BACKUP_FORMAT = 'bullet-journal-backup'
 export const BACKUP_VERSION = 1
@@ -13,4 +13,5 @@ export const CLOUD_COLLECTIONS = {
   entry: 'bujoEntries',
   tag: 'bujoTags',
   collection: 'bujoCollections',
+  subscription: 'bujoSubscriptions',
 } as const

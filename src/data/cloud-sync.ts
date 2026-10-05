@@ -10,7 +10,7 @@ interface CloudSyncCallbacks {
   onStatus: (status: SyncStatus, detail?: string) => void
 }
 
-const ENTITIES: SyncEntity[] = ['entry', 'tag', 'collection']
+const ENTITIES: SyncEntity[] = ['entry', 'tag', 'collection', 'subscription']
 
 export class CloudSync {
   private userId?: string
